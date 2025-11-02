@@ -41,10 +41,8 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
 
       // Request camera permission
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+        video: {
+          facingMode: { ideal: 'environment' }
         }
       });
 
@@ -123,20 +121,22 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
   const scanWithZXing = useCallback(async () => {
     if (!videoRef.current) return;
 
+    if (!readerRef.current) {
+      readerRef.current = new BrowserMultiFormatReader(undefined, 250);
+    }
+
     try {
-      if (!readerRef.current) {
-        readerRef.current = new BrowserMultiFormatReader();
-      }
-
-      const result = await readerRef.current.decodeOnceFromVideoDevice(
-        undefined,
-        videoRef.current
+      readerRef.current.decodeFromVideoDevice(
+        null,
+        videoRef.current,
+        (result, _err) => {
+          if (result) {
+            onResult(result.getText().trim());
+            stopStream();
+          }
+          // Ignore errors – keep scanning
+        }
       );
-
-      if (result) {
-        onResult(result.getText().trim());
-        stopStream();
-      }
     } catch (err) {
       console.error('ZXing scanning failed:', err);
       setError('Scanning failed. Please try again.');
