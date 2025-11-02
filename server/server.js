@@ -174,16 +174,55 @@ app.post('/api/pairs/batch', authenticateToken, (req, res) => {
       }
 
       if (!assetTag) {
-        results[index] = {
-          status: 'missing_asset_tag',
-          asset_tag,
-          serial,
-          message: 'Asset tag not found'
-        };
-        completed++;
-        if (completed === pairs.length) {
-          res.json(results);
-        }
+        // Auto-create the asset tag on-the-fly when it is not found
+        db.run(`INSERT INTO asset_tags (tag, status) VALUES (?, 'unused')`, [asset_tag], (err2) => {
+          if (err2) {
+            results[index] = {
+              status: 'error',
+              asset_tag,
+              serial,
+              message: 'Failed to create asset tag'
+            };
+            completed++;
+            if (completed === pairs.length) {
+              res.json(results);
+            }
+            return;
+          }
+
+          // Proceed to insert the pair after creating the asset tag
+          db.run(
+            `INSERT INTO pairs (asset_tag, serial, assigned_by, assigned_at) VALUES (?, ?, ?, ?)`,
+            [asset_tag, serial, req.user.username, scanned_at || new Date().toISOString()],
+            (err3) => {
+              if (err3) {
+                results[index] = {
+                  status: 'error',
+                  asset_tag,
+                  serial,
+                  message: 'Failed to save pair'
+                };
+              } else {
+                // Mark the new asset tag as used and record last serial
+                db.run(
+                  'UPDATE asset_tags SET status = ?, last_serial = ?, updated_at = CURRENT_TIMESTAMP WHERE tag = ?',
+                  ['used', serial, asset_tag]
+                );
+                results[index] = {
+                  status: 'ok_inserted',
+                  asset_tag,
+                  serial,
+                  message: 'Pair saved successfully'
+                };
+              }
+
+              completed++;
+              if (completed === pairs.length) {
+                res.json(results);
+              }
+            }
+          );
+        });
         return;
       }
 
@@ -226,7 +265,8 @@ app.post('/api/pairs/batch', authenticateToken, (req, res) => {
               results[index] = {
                 status,
                 asset_tag,
-                serial
+                serial,
+                message: 'Pair saved successfully'
               };
             }
 

@@ -18,7 +18,12 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const isScanningRef = useRef(false);
   const [error, setError] = useState<string>('');
+  // keep ref updated with latest scanning state
+  useEffect(() => {
+    isScanningRef.current = isScanning;
+  }, [isScanning]);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   const stopStream = useCallback(() => {
@@ -29,14 +34,16 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
     if (readerRef.current) {
       readerRef.current.reset();
     }
+    isScanningRef.current = false;
     setIsScanning(false);
   }, []);
 
   const startScanning = useCallback(async () => {
-    if (!videoRef.current || isScanning) return;
+    if (!videoRef.current || isScanningRef.current) return;
 
     try {
       setError('');
+      isScanningRef.current = true;
       setIsScanning(true);
 
       // Request camera permission
@@ -48,7 +55,12 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
 
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
-      await videoRef.current.play();
+      try {
+        await videoRef.current.play();
+      } catch (playErr) {
+        // Ignore interruption errors which occur when the element is removed early
+        console.warn('Video play interrupted:', playErr);
+      }
 
       // Try multiple detection methods
       if (window.BarcodeDetector) {
@@ -88,7 +100,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
       });
 
       const scanLoop = async () => {
-        if (!videoRef.current || !isScanning) return;
+        if (!videoRef.current || !isScanningRef.current) return;
 
         try {
           const barcodes = await detector.detect(videoRef.current);
@@ -105,7 +117,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
         }
 
         // Continue scanning
-        if (isScanning) {
+        if (isScanningRef.current) {
           requestAnimationFrame(scanLoop);
         }
       };
@@ -157,7 +169,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
       canvas.height = videoRef.current.videoHeight;
 
       const scanLoop = async () => {
-        if (!videoRef.current || !isScanning) return;
+        if (!videoRef.current || !isScanningRef.current) return;
 
         try {
           // Draw current video frame to canvas
@@ -211,7 +223,7 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
         }
 
         // Continue scanning
-        if (isScanning) {
+        if (isScanningRef.current) {
           setTimeout(() => requestAnimationFrame(scanLoop), 2000); // Slower for OCR processing
         }
       };
@@ -223,16 +235,16 @@ export const Scanner: React.FC<ScannerProps> = ({ onResult, onError, isActive })
   }, [isScanning, onResult, stopStream]);
 
   useEffect(() => {
-    if (isActive && !isScanning) {
+    if (isActive) {
       startScanning();
-    } else if (!isActive && isScanning) {
+    } else {
       stopStream();
     }
 
     return () => {
       stopStream();
     };
-  }, [isActive, isScanning, startScanning, stopStream]);
+  }, [isActive]);
 
   if (!isActive) {
     return null;

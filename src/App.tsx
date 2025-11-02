@@ -164,7 +164,7 @@ function App() {
         <PairBuilder onPairAdded={handlePairAdded} addToast={addToast} />
         
         {/* Pair List */}
-        <PairList refreshTrigger={refreshTrigger} />
+        <PairList refreshTrigger={refreshTrigger} addToast={addToast} />
         
         {/* Offline Notice */}
         {!isOnline && (

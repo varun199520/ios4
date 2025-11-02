@@ -4,9 +4,10 @@ import { api, networkManager } from '../api';
 
 interface PairListProps {
   refreshTrigger: number;
+  addToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-export const PairList: React.FC<PairListProps> = ({ refreshTrigger }) => {
+export const PairList: React.FC<PairListProps> = ({ refreshTrigger, addToast }) => {
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -94,10 +95,14 @@ export const PairList: React.FC<PairListProps> = ({ refreshTrigger }) => {
         }
 
         if (successCount > 0) {
-          setUploadStatus(`✓ ${successCount} pairs uploaded successfully`);
+          const msg = `✓ ${successCount} pairs uploaded successfully`;
+          setUploadStatus(msg);
+          addToast?.(msg, 'success');
         }
         if (errorCount > 0) {
-          setUploadStatus(prev => prev + ` | ${errorCount} errors: ${errors.join(', ')}`);
+          const errMsg = `${errorCount} errors: ${errors.join(', ')}`;
+          setUploadStatus(prev => prev + ` | ${errMsg}`);
+          addToast?.(errMsg, 'error');
         }
 
       } else {
@@ -116,7 +121,9 @@ export const PairList: React.FC<PairListProps> = ({ refreshTrigger }) => {
 
     } catch (error) {
       console.error('Upload failed:', error);
-      setUploadStatus(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errText = `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      setUploadStatus(errText);
+      addToast?.(errText, 'error');
     } finally {
       setIsUploading(false);
       // Clear status after 5 seconds
