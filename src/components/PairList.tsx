@@ -5,9 +5,11 @@ import { api, networkManager } from '../api';
 interface PairListProps {
   refreshTrigger: number;
   addToast?: (message: string, type: 'success' | 'error' | 'info') => void;
+  isLoggedIn: boolean;
+  onRequestLogin: () => void;
 }
 
-export const PairList: React.FC<PairListProps> = ({ refreshTrigger, addToast }) => {
+export const PairList: React.FC<PairListProps> = ({ refreshTrigger, addToast, isLoggedIn, onRequestLogin }) => {
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -51,6 +53,10 @@ export const PairList: React.FC<PairListProps> = ({ refreshTrigger, addToast }) 
   };
 
   const uploadPairs = async () => {
+    if (!isLoggedIn) {
+      onRequestLogin();
+      return;
+    }
     if (pairs.length === 0) return;
 
     setIsUploading(true);

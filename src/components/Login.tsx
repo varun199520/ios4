@@ -3,9 +3,10 @@ import { api } from '../api';
 
 interface LoginProps {
   onLoginSuccess: (username: string) => void;
+  onCancel?: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onCancel }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +96,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
 
         </form>
+
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-4 w-full text-sm text-gray-600 hover:underline"
+          >
+            Cancel
+          </button>
+        )}
 
         <div className="mt-6 text-center text-sm text-gray-500">
           <p>Offline-first asset tracking</p>

@@ -10,6 +10,7 @@ import './index.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [username, setUsername] = useState<string>('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showSearchReplace, setShowSearchReplace] = useState(false);
@@ -114,9 +115,6 @@ function App() {
     );
   }
 
-  if (!isLoggedIn) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,13 +144,22 @@ function App() {
                 Search & Replace
               </button>
               
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
-              >
-                Logout
-              </button>
+              {/* Auth Button */}
+              {isLoggedIn ? (
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
+                >
+                  Logout
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                >
+                  Login
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -164,7 +171,12 @@ function App() {
         <PairBuilder onPairAdded={handlePairAdded} addToast={addToast} />
         
         {/* Pair List */}
-        <PairList refreshTrigger={refreshTrigger} addToast={addToast} />
+        <PairList
+          refreshTrigger={refreshTrigger}
+          addToast={addToast}
+          isLoggedIn={isLoggedIn}
+          onRequestLogin={() => setShowLoginModal(true)}
+        />
         
         {/* Offline Notice */}
         {!isOnline && (
@@ -192,6 +204,21 @@ function App() {
         <p>Asset Tracker PWA • Offline-first • Scan • Store • Sync</p>
         <p className="mt-1">Made for iOS Safari • Add to Home Screen for best experience</p>
       </footer>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+            <Login
+              onLoginSuccess={(user) => {
+                handleLoginSuccess(user);
+                setShowLoginModal(false);
+              }}
+              onCancel={() => setShowLoginModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       <ToastManager toasts={toasts} removeToast={removeToast} />
