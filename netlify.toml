@@ -3,4 +3,4 @@
   publish = "dist"
 
 [build.environment]
-  VITE_API_BASE = "https://caught-gui-singer-readily.trycloudflare.com/api"
+  VITE_API_BASE = "https://neighbors-soccer-royalty-made.trycloudflare.com/api"
