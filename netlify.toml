@@ -3,4 +3,4 @@
   publish = "dist"
 
 [build.environment]
-  
+  VITE_API_BASE = "https://connecting-came-alaska-cork.trycloudflare.com/api"
