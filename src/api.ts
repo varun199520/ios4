@@ -1,6 +1,6 @@
 import { dbHelpers } from './db';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
 export interface LoginRequest {
   username: string;
@@ -63,7 +63,7 @@ class ApiClient {
   ): Promise<T> {
     const token = await this.getAuthToken();
     
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
@@ -92,7 +92,7 @@ class ApiClient {
   }
 
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch(`${API_BASE}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -115,11 +115,11 @@ class ApiClient {
 
   async getAssetTags(since?: string): Promise<AssetTagResponse[]> {
     const params = since ? `?since=${encodeURIComponent(since)}` : '';
-    return this.makeRequest<AssetTagResponse[]>(`/asset-tags${params}`);
+    return this.makeRequest<AssetTagResponse[]>(`/asset-tags/${params}`);
   }
 
   async uploadPairs(pairs: PairUploadRequest[]): Promise<PairUploadResponse[]> {
-    return this.makeRequest<PairUploadResponse[]>('/pairs/batch', {
+    return this.makeRequest<PairUploadResponse[]>('/pairs/batch/', {
       method: 'POST',
       body: JSON.stringify(pairs),
     });
@@ -130,11 +130,11 @@ class ApiClient {
     if (query.asset_tag) params.set('asset_tag', query.asset_tag);
     if (query.serial) params.set('serial', query.serial);
     
-    return this.makeRequest<SearchResponse>(`/pairs/search?${params}`);
+    return this.makeRequest<SearchResponse>(`/pairs/search/?${params}`);
   }
 
   async replacePair(request: ReplaceRequest): Promise<{ success: boolean; message: string }> {
-    return this.makeRequest<{ success: boolean; message: string }>('/pairs/replace', {
+    return this.makeRequest<{ success: boolean; message: string }>('/pairs/replace/', {
       method: 'PUT',
       body: JSON.stringify(request),
     });
